@@ -1,0 +1,7 @@
+tfa_sms.settings:
+  title: 'TFA SMS'
+  description: 'Configure SMS-based two-factor authentication settings.'
+  parent: tfa.settings
+  route_name: tfa_sms.settings
+  weight: 10
+  menu_name: admin 

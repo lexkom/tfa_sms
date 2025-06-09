@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the TFA SMS module.
+ */
+
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
+
+/**
+ * Implements hook_install().
+ */
+function tfa_sms_install() {
+  // Check if SMS Framework is installed and has a phone field.
+  if (function_exists('sms_user_phone_field')) {
+    // Use SMS Framework's phone field.
+    $field = sms_user_phone_field();
+  }
+  else {
+    // Create phone number field if it doesn't exist.
+    if (!FieldStorageConfig::loadByName('user', 'field_phone_number')) {
+      $field_storage = FieldStorageConfig::create([
+        'field_name' => 'field_phone_number',
+        'entity_type' => 'user',
+        'type' => 'telephone',
+        'cardinality' => 1,
+        'translatable' => FALSE,
+      ]);
+      $field_storage->save();
+
+      $field = FieldConfig::create([
+        'field_storage' => $field_storage,
+        'bundle' => 'user',
+        'label' => t('Phone Number'),
+        'description' => t('Phone number for SMS-based two-factor authentication.'),
+        'required' => FALSE,
+      ]);
+      $field->save();
+    }
+  }
+
+  // Configure form display.
+  $form_display = EntityFormDisplay::collectRenderDisplay(\Drupal::entityTypeManager()->getStorage('user')->create(), 'default');
+  $form_display->setComponent('field_phone_number', [
+    'type' => 'telephone_default',
+    'weight' => 0,
+  ])->save();
+
+  // Configure view display.
+  $view_display = EntityViewDisplay::collectRenderDisplay(\Drupal::entityTypeManager()->getStorage('user')->create(), 'default');
+  $view_display->setComponent('field_phone_number', [
+    'type' => 'string',
+    'weight' => 0,
+  ])->save();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function tfa_sms_uninstall() {
+  // We don't remove the phone field on uninstall as it might be used by other modules.
+} 

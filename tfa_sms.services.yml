@@ -1,0 +1,11 @@
+services:
+  tfa_sms.sender:
+    class: Drupal\tfa_sms\Service\SmsSender
+    arguments: ['@sms.provider', '@config.factory', '@logger.factory']
+    public: true
+
+  tfa_sms.event_subscriber:
+    class: Drupal\tfa_sms\EventSubscriber\TfaSmsEventSubscriber
+    arguments: ['@current_user', '@user.data', '@current_route_match']
+    tags:
+      - { name: event_subscriber } 

@@ -1,0 +1,27 @@
+tfa_sms.settings:
+  path: '/admin/config/people/tfa/sms'
+  defaults:
+    _form: '\Drupal\tfa_sms\Form\TfaSmsSettingsForm'
+    _title: 'SMS TFA Settings'
+  requirements:
+    _permission: 'administer tfa'
+
+tfa.validation.resend:
+  path: '/tfa/validation/resend/{uid}/{method}'
+  defaults:
+    _controller: '\Drupal\tfa_sms\Controller\TfaSmsResendController::resendCode'
+    _title: 'Resend TFA Code'
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE
+
+tfa_sms.resend_code:
+  path: '/tfa/sms/resend/{uid}'
+  defaults:
+    _controller: '\Drupal\tfa_sms\Controller\TfaSmsController::resendCode'
+    _title: 'Resend TFA Code'
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE 

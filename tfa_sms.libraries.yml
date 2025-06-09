@@ -1,0 +1,11 @@
+tfa_sms:
+  version: 1.x
+  css:
+    theme:
+      css/tfa_sms.css: {}
+  js:
+    js/tfa_sms.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/once 

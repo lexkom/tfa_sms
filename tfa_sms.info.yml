@@ -1,0 +1,8 @@
+name: TFA SMS
+type: module
+description: 'Provides SMS-based two-factor authentication using SMS Framework.'
+package: Security
+core_version_requirement: ^9 || ^10 || ^11
+dependencies:
+  - tfa:tfa
+  - sms:sms 
