@@ -11,8 +11,7 @@
         "source": "https://git.drupalcode.org/project/tfa_sms"
     },
     "require": {
-        "drupal/core": "^9 || ^10 || ^11",
-        "drupal/tfa": "^1.0",
-        "drupal/smsframework": "^1.0"
+        "drupal/smsframework": "^2.3",
+        "twilio/sdk": "dev-main"
     }
-} 
+}

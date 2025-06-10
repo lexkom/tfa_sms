@@ -8,4 +8,17 @@ services:
     class: Drupal\tfa_sms\EventSubscriber\TfaSmsEventSubscriber
     arguments: ['@current_user', '@user.data', '@current_route_match']
     tags:
-      - { name: event_subscriber } 
+      - { name: event_subscriber }
+
+  plugin.manager.sms.gateway:
+    class: Drupal\sms\Plugin\SmsGatewayPluginManager
+    parent: default_plugin_manager
+    arguments: ['@container.namespaces', '@cache.discovery', '@module_handler', '@logger.factory']
+    tags:
+      - { name: plugin_manager_cache_clear }
+
+  tfa_sms.twilio_gateway:
+    class: Drupal\tfa_sms\Plugin\SmsGateway\TwilioGateway
+    arguments: ['@logger.factory']
+    tags:
+      - { name: sms_gateway } 

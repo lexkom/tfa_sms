@@ -6,6 +6,7 @@ use Drupal\sms\Provider\SmsProviderInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\sms\Entity\SmsMessage;
+use Drupal\sms\Entity\SmsGateway;
 
 /**
  * Service for sending SMS messages.
@@ -84,12 +85,27 @@ class SmsSender {
       // Create and send the SMS message.
       $logger->debug('Creating SMS message for @phone', ['@phone' => $phone]);
       
+      // Get the default gateway from SMS Framework settings
+      $sms_config = $this->configFactory->get('sms.settings');
+      $default_gateway_id = $sms_config->get('default_gateway');
+      
+      if (empty($default_gateway_id)) {
+        throw new \Exception('No default SMS gateway configured in SMS Framework settings.');
+      }
+
+      $gateway = SmsGateway::load($default_gateway_id);
+      if (!$gateway) {
+        throw new \Exception('Default SMS gateway not found. Please configure it in the SMS Framework settings.');
+      }
+
+      $logger->debug('Using gateway: @gateway', ['@gateway' => $default_gateway_id]);
+
       $sms_message = SmsMessage::create()
         ->addRecipient($phone)
         ->setMessage($message)
-        ->setOption('provider', 'twilio');
+        ->setGateway($gateway);
 
-      $logger->debug('Sending SMS message via Twilio provider');
+      $logger->debug('Sending SMS message via @gateway provider', ['@gateway' => $default_gateway_id]);
       $this->smsProvider->send($sms_message);
 
       $logger->debug('SMS sent successfully to @phone', [
