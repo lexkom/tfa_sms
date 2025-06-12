@@ -9,7 +9,6 @@ use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
-use Drupal\Core\Config\ConfigFactoryInterface;
 
 /**
  * Implements hook_install().
@@ -56,12 +55,6 @@ function tfa_sms_install() {
     'type' => 'string',
     'weight' => 0,
   ])->save();
-
-  // Устанавливаем Twilio как шлюз по умолчанию для SMS.
-  \Drupal::configFactory()
-    ->getEditable('sms.settings')
-    ->set('default_gateway', 'twilio')
-    ->save();
 }
 
 /**
