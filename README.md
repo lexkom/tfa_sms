@@ -1,94 +1,102 @@
 # TFA SMS Module
 
-Модуль для Drupal, который добавляет двухфакторную аутентификацию через SMS с использованием SMS Framework.
+A Drupal module that adds SMS-based two-factor authentication using SMS Framework.
 
-## Описание
+## Description
 
-Модуль `tfa_sms` предоставляет плагин для модуля TFA (Two-Factor Authentication), который позволяет пользователям получать коды подтверждения через SMS. Модуль использует SMS Framework для отправки сообщений и поддерживает различные SMS-провайдеры (например, Twilio).
+The `tfa_sms` module provides a plugin for the TFA (Two-Factor Authentication) module that enables users to receive verification codes via SMS. The module uses SMS Framework for message delivery and supports various SMS providers (e.g., Twilio).
 
-## Требования
+## Requirements
 
 - Drupal 9/10/11
-- Модуль [TFA](https://www.drupal.org/project/tfa)
-- Модуль [SMS Framework](https://www.drupal.org/project/sms)
-- Настроенный SMS-провайдер (например, Twilio)
+- [TFA](https://www.drupal.org/project/tfa) module
+- [SMS Framework](https://www.drupal.org/project/sms) module
+- [Encrypt](https://www.drupal.org/project/encrypt) module
+- Configured SMS provider (e.g., Twilio)
 
-## Установка
+## Installation
 
-1. Установите модуль через Composer:
+1. Install the module via Composer:
    ```bash
    composer require drupal/tfa_sms
    ```
 
-2. Включите модуль через административный интерфейс или Drush:
+2. Enable the module through the admin interface or Drush:
    ```bash
    drush en tfa_sms
    ```
 
-3. Настройте SMS-провайдер в SMS Framework (например, Twilio).
+3. Configure your SMS provider in SMS Framework (e.g., Twilio).
 
-4. Перейдите в настройки TFA (`/admin/config/people/tfa`) и включите плагин "SMS TFA".
+4. Navigate to TFA settings (`/admin/config/people/tfa`) and enable the "SMS TFA" plugin.
 
-## Настройка
+## Configuration
 
-### Настройка модуля
+### Module Settings
 
-1. Перейдите в настройки модуля (`/admin/config/people/tfa-sms`).
-2. Укажите имя отправителя SMS.
-3. Настройте префикс номера телефона (например, +1 для США).
-4. При необходимости включите режим отладки.
+1. Navigate to module settings (`/admin/config/people/tfa/sms`).
+2. Optionally enable debug mode.
 
-### Поле телефона
+### Phone Field
 
-Модуль автоматически создает поле `field_phone_number` для пользователей, если оно еще не существует. Если у вас уже установлен SMS Framework, модуль будет использовать его поле телефона.
+The module automatically creates a `field_phone_number` for users if it doesn't exist. If you already have SMS Framework installed, the module will use its phone field.
 
-Чтобы добавить поле телефона вручную:
+To add the phone field manually:
 
-1. Перейдите в настройки полей пользователя (`/admin/config/people/accounts/fields`).
-2. Добавьте новое поле типа "Телефон".
-3. Назовите поле `field_phone_number`.
-4. Настройте видимость и доступность поля в форме редактирования профиля.
+1. Navigate to user field settings (`/admin/config/people/accounts/fields`).
+2. Add a new field of type "Phone".
+3. Name the field `field_phone_number`.
+4. Configure field visibility and accessibility in the profile edit form.
 
-## Отладка
+## Debugging
 
-### Включение режима отладки
+### Enabling Debug Mode
 
-1. Перейдите в настройки модуля (`/admin/config/people/tfa-sms`).
-2. Включите опцию "Enable debug logging".
+1. Navigate to module settings (`/admin/config/people/tfa/sms`).
+2. Enable the "Enable debug logging" option.
 
-### Просмотр логов
+### Viewing Logs
 
-В режиме отладки модуль записывает подробные логи в канал `tfa_sms_gateway`. Вы можете просмотреть логи:
+In debug mode, the module logs detailed information to the `tfa_sms` channel. You can view logs:
 
-1. Через административный интерфейс: `/admin/reports/dblog`
-2. Через Drush:
+1. Through the admin interface: `/admin/reports/dblog`
+2. Via Drush:
    ```bash
-   drush ws --type=tfa_sms_gateway
+   drush ws --type=tfa_sms
    ```
 
-### Тестирование отправки SMS
+### Testing SMS Sending
 
-В настройках модуля есть раздел "Test SMS sending", где вы можете:
+The module settings include a "Test SMS sending" section where you can:
 
-1. Ввести тестовый номер телефона
-2. Ввести тестовое сообщение
-3. Отправить тестовое SMS
+1. Enter a test phone number
+2. Enter a test message
+3. Send a test SMS
 
-В режиме отладки SMS не будут отправляться реально, а только логироваться.
+In debug mode, SMS messages are only logged and not actually sent.
 
-## Ограничения
+## Features
 
-- Максимальное количество попыток ввода кода: 3
-- Код действителен только для одной попытки входа
-- Требуется действительный номер телефона у пользователя
+- SMS-based two-factor authentication
+- Support for multiple SMS providers through SMS Framework
+- Automatic phone field creation
+- Debug mode for testing
+- Secure code generation
+- Login attempt logging
+- Rate limiting for verification attempts
 
-## Безопасность
+## Security
 
-- Коды генерируются с использованием криптографически безопасного генератора случайных чисел
-- Все попытки входа логируются
-- Поддерживается ограничение количества попыток
-- Номера телефонов проверяются на валидность
+- Codes are generated using a cryptographically secure random number generator
+- All login attempts are logged
+- Rate limiting is supported
+- Phone numbers are validated
+- Integration with Drupal's encryption system
 
-## Поддержка
+## Support
 
-Если у вас возникли проблемы или есть предложения по улучшению модуля, создайте issue в системе отслеживания проблем проекта. 
+If you encounter issues or have suggestions for improving the module, please create an issue in the project's issue tracking system.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests. 
