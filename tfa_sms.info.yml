@@ -4,5 +4,7 @@ description: 'Provides SMS-based two-factor authentication using SMS Framework.'
 package: Security
 core_version_requirement: ^9 || ^10 || ^11
 dependencies:
-  - tfa:tfa
-  - sms:sms 
+  - drupal:tfa
+  - drupal:sms
+  - drupal:encrypt
+version: 9.x-1.0-dev 
