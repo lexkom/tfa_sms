@@ -9,6 +9,7 @@ use Drupal\user\UserDataInterface;
 use Drupal\tfa_sms\Service\SmsSender;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 
 /**
  * Controller for TFA SMS functionality.
@@ -30,16 +31,26 @@ class TfaSmsController extends ControllerBase {
   protected $smsSender;
 
   /**
+   * The logger factory.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   */
+  protected $loggerFactory;
+
+  /**
    * Constructs a new TfaSmsController object.
    *
    * @param \Drupal\user\UserDataInterface $user_data
    *   The user data service.
    * @param \Drupal\tfa_sms\Service\SmsSender $sms_sender
    *   The SMS sender service.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
+   *   The logger factory.
    */
-  public function __construct(UserDataInterface $user_data, SmsSender $sms_sender) {
+  public function __construct(UserDataInterface $user_data, SmsSender $sms_sender, LoggerChannelFactoryInterface $logger_factory) {
     $this->userData = $user_data;
     $this->smsSender = $sms_sender;
+    $this->loggerFactory = $logger_factory;
   }
 
   /**
@@ -48,7 +59,8 @@ class TfaSmsController extends ControllerBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('user.data'),
-      $container->get('tfa_sms.sender')
+      $container->get('tfa_sms.sender'),
+      $container->get('logger.factory')
     );
   }
 
@@ -65,8 +77,7 @@ class TfaSmsController extends ControllerBase {
    */
   public function resendCode($uid, Request $request) {
     $response = new AjaxResponse();
-    
-    \Drupal::logger('tfa_sms')->debug('Resend code request received for user @uid', ['@uid' => $uid]);
+    $logger = $this->loggerFactory->get('tfa_sms');
 
     // Очищаем старый код и счетчик попыток
     $this->userData->delete('tfa_sms', $uid, 'code');
@@ -78,28 +89,30 @@ class TfaSmsController extends ControllerBase {
     $this->userData->set('tfa_sms', $uid, 'code', $code);
     $this->userData->set('tfa_sms', $uid, 'last_send', time());
 
-    \Drupal::logger('tfa_sms')->debug('Generated new code for user @uid: @code', ['@uid' => $uid, '@code' => $code]);
-
     // Получаем номер телефона пользователя
     $user = \Drupal\user\Entity\User::load($uid);
     if ($user && $user->hasField('field_phone_number') && !$user->get('field_phone_number')->isEmpty()) {
       $phone_number = $user->get('field_phone_number')->value;
       $message = $this->t('Your verification code is: @code', ['@code' => $code]);
 
-      \Drupal::logger('tfa_sms')->debug('Sending SMS to @phone with code @code', ['@phone' => $phone_number, '@code' => $code]);
-
       if ($this->smsSender->send($phone_number, $message)) {
         $this->messenger()->addStatus($this->t('A new verification code has been sent to your phone.'));
-        \Drupal::logger('tfa_sms')->debug('SMS sent successfully');
+        $logger->info('Verification code sent to @phone for user @uid', [
+          '@phone' => $phone_number,
+          '@uid' => $uid,
+        ]);
       }
       else {
         $this->messenger()->addError($this->t('Failed to send verification code. Please try again later.'));
-        \Drupal::logger('tfa_sms')->error('Failed to send SMS');
+        $logger->error('Failed to send verification code to @phone for user @uid', [
+          '@phone' => $phone_number,
+          '@uid' => $uid,
+        ]);
       }
     }
     else {
       $this->messenger()->addError($this->t('Failed to send verification code: phone number not found.'));
-      \Drupal::logger('tfa_sms')->error('Phone number not found for user @uid', ['@uid' => $uid]);
+      $logger->error('Phone number not found for user @uid', ['@uid' => $uid]);
     }
 
     // Получаем сообщения и добавляем их в ответ

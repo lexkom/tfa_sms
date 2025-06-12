@@ -8,6 +8,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\sms\Provider\SmsProviderInterface;
 use Drupal\sms\Entity\SmsMessage;
 use Drupal\sms\Entity\SmsGateway;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -30,17 +31,27 @@ class TfaSmsSettingsForm extends ConfigFormBase {
   protected $configFactory;
 
   /**
+   * The logger factory.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   */
+  protected $loggerFactory;
+
+  /**
    * Constructs a TfaSmsSettingsForm object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
    * @param \Drupal\sms\Provider\SmsProviderInterface $sms_provider
    *   The SMS provider.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
+   *   The logger factory.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, SmsProviderInterface $sms_provider) {
+  public function __construct(ConfigFactoryInterface $config_factory, SmsProviderInterface $sms_provider, LoggerChannelFactoryInterface $logger_factory) {
     parent::__construct($config_factory);
     $this->smsProvider = $sms_provider;
     $this->configFactory = $config_factory;
+    $this->loggerFactory = $logger_factory;
   }
 
   /**
@@ -49,7 +60,8 @@ class TfaSmsSettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
-      $container->get('sms.provider')
+      $container->get('sms.provider'),
+      $container->get('logger.factory')
     );
   }
 
@@ -112,9 +124,19 @@ class TfaSmsSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $old_debug = $this->config('tfa_sms.settings')->get('debug');
+    $new_debug = $form_state->getValue('debug');
+
     $this->config('tfa_sms.settings')
-      ->set('debug', $form_state->getValue('debug'))
+      ->set('debug', $new_debug)
       ->save();
+
+    if ($old_debug !== $new_debug) {
+      $logger = $this->loggerFactory->get('tfa_sms');
+      $logger->notice('Debug mode @status', [
+        '@status' => $new_debug ? 'enabled' : 'disabled',
+      ]);
+    }
 
     parent::submitForm($form, $form_state);
   }
@@ -143,6 +165,7 @@ class TfaSmsSettingsForm extends ConfigFormBase {
     $message = $form_state->getValue('test_message');
     $config = $this->config('tfa_sms.settings');
     $debug = $config->get('debug');
+    $logger = $this->loggerFactory->get('tfa_sms');
 
     try {
       // Get the default gateway from SMS Framework settings
@@ -159,6 +182,11 @@ class TfaSmsSettingsForm extends ConfigFormBase {
       }
 
       if ($debug) {
+        $logger->notice('Test SMS (debug mode): Would send to @phone via @gateway with message: @message', [
+          '@phone' => $phone,
+          '@gateway' => $default_gateway_id,
+          '@message' => $message,
+        ]);
         $this->messenger()->addStatus($this->t('Debug mode: SMS not actually sent to @phone. Message would be: @message', [
           '@phone' => $phone,
           '@message' => $message,
@@ -172,9 +200,17 @@ class TfaSmsSettingsForm extends ConfigFormBase {
         ->setGateway($gateway);
 
       $this->smsProvider->send($sms_message);
+      $logger->info('Test SMS sent successfully to @phone via @gateway', [
+        '@phone' => $phone,
+        '@gateway' => $default_gateway_id,
+      ]);
       $this->messenger()->addStatus($this->t('Test SMS sent successfully to @phone.', ['@phone' => $phone]));
     }
     catch (\Exception $e) {
+      $logger->error('Failed to send test SMS to @phone: @error', [
+        '@phone' => $phone,
+        '@error' => $e->getMessage(),
+      ]);
       $this->messenger()->addError($this->t('Failed to send test SMS: @error', ['@error' => $e->getMessage()]));
     }
   }

@@ -406,7 +406,7 @@ class SmsTfa extends TfaBasePlugin implements TfaValidationInterface, ContainerF
    */
   protected function logDebug($message, array $context = []) {
     if ($this->configFactory->get('tfa_sms.settings')->get('debug')) {
-      $this->loggerFactory->get('tfa_sms_gateway')->debug($message, $context);
+      $this->loggerFactory->get('tfa_sms')->debug($message, $context);
     }
   }
 

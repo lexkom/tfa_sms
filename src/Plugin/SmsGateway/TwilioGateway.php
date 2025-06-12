@@ -140,7 +140,7 @@ class TwilioGateway extends SmsGatewayPluginBase {
     if (!$this->loggerFactory) {
         throw new \Exception('Logger factory is not initialized');
       }
-    $logger = $this->loggerFactory->get('tfa_sms_gateway');
+    $logger = $this->loggerFactory->get('tfa_sms');
 
     try {
       $logger->debug('Starting SMS sending process to @recipient', ['@recipient' => $sms_message->getRecipients()[0]]);
@@ -182,7 +182,7 @@ class TwilioGateway extends SmsGatewayPluginBase {
       $report->setStatusMessage($message->errorMessage ?? '');
       $result->addReport($report);
 
-      $logger->debug('SMS sent successfully to @recipient', ['@recipient' => $sms_message->getRecipients()[0]]);
+      $logger->info('SMS sent successfully to @recipient', ['@recipient' => $sms_message->getRecipients()[0]]);
 
     }
     catch (TwilioException $e) {

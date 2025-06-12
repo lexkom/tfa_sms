@@ -64,17 +64,10 @@ class SmsSender {
   public function send($phone, $message) {
     $config = $this->configFactory->get('tfa_sms.settings');
     $debug = $config->get('debug');
-    $logger = $this->loggerFactory->get('tfa_sms_gateway');
+    $logger = $this->loggerFactory->get('tfa_sms');
 
-    // Log the attempt.
-    $logger->debug('Starting SMS sending process to @phone', [
-      '@phone' => $phone,
-      '@message' => $message,
-    ]);
-
-    // If debug mode is enabled, just log and return success.
     if ($debug) {
-      $logger->debug('Debug mode: SMS not actually sent to @phone. Message would be: @message', [
+      $logger->notice('Debug mode: SMS would be sent to @phone with message: @message', [
         '@phone' => $phone,
         '@message' => $message,
       ]);
@@ -82,9 +75,6 @@ class SmsSender {
     }
 
     try {
-      // Create and send the SMS message.
-      $logger->debug('Creating SMS message for @phone', ['@phone' => $phone]);
-      
       // Get the default gateway from SMS Framework settings
       $sms_config = $this->configFactory->get('sms.settings');
       $default_gateway_id = $sms_config->get('default_gateway');
@@ -98,18 +88,15 @@ class SmsSender {
         throw new \Exception('Default SMS gateway not found. Please configure it in the SMS Framework settings.');
       }
 
-      $logger->debug('Using gateway: @gateway', ['@gateway' => $default_gateway_id]);
-
       $sms_message = SmsMessage::create()
         ->addRecipient($phone)
         ->setMessage($message)
         ->setGateway($gateway);
 
-      $logger->debug('Sending SMS message via @gateway provider', ['@gateway' => $default_gateway_id]);
       $this->smsProvider->send($sms_message);
-
-      $logger->debug('SMS sent successfully to @phone', [
+      $logger->info('SMS sent successfully to @phone via @gateway', [
         '@phone' => $phone,
+        '@gateway' => $default_gateway_id,
       ]);
 
       return TRUE;
