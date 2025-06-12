@@ -1,0 +1,5 @@
+tfa_sms.settings:
+  title: 'TFA SMS Settings'
+  route_name: tfa_sms.settings
+  appears_on:
+    - tfa.settings 

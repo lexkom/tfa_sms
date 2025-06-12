@@ -1,0 +1,24 @@
+services:
+  tfa_sms.sender:
+    class: Drupal\tfa_sms\Service\SmsSender
+    arguments: ['@sms.provider', '@config.factory', '@logger.factory']
+    public: true
+
+  tfa_sms.event_subscriber:
+    class: Drupal\tfa_sms\EventSubscriber\TfaSmsEventSubscriber
+    arguments: ['@current_user', '@user.data', '@current_route_match']
+    tags:
+      - { name: event_subscriber }
+
+  plugin.manager.sms.gateway:
+    class: Drupal\sms\Plugin\SmsGatewayPluginManager
+    parent: default_plugin_manager
+    arguments: ['@container.namespaces', '@cache.discovery', '@module_handler', '@logger.factory']
+    tags:
+      - { name: plugin_manager_cache_clear }
+
+  tfa_sms.twilio_gateway:
+    class: Drupal\tfa_sms\Plugin\SmsGateway\TwilioGateway
+    arguments: ['@logger.factory']
+    tags:
+      - { name: sms_gateway } 

@@ -1,0 +1,17 @@
+{
+    "name": "drupal/tfa_sms",
+    "type": "drupal-module",
+    "description": "Provides SMS-based two-factor authentication using SMS Framework",
+    "keywords": ["Drupal", "Security", "TFA", "SMS"],
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://www.drupal.org/project/tfa_sms",
+    "minimum-stability": "dev",
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/tfa_sms",
+        "source": "https://git.drupalcode.org/project/tfa_sms"
+    },
+    "require": {
+        "drupal/smsframework": "^2.3",
+        "twilio/sdk": "dev-main"
+    }
+}

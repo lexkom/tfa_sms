@@ -1,0 +1,18 @@
+.resend-code {
+  margin-top: 1em;
+  text-align: center;
+}
+
+.resend-code.disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+.resend-code a {
+  color: #0071b8;
+  text-decoration: none;
+}
+
+.resend-code a:hover {
+  text-decoration: underline;
+} 
