@@ -1,14 +1,14 @@
-(function ($, Drupal, once) {
+(function (Drupal, once) {
   'use strict';
 
   Drupal.behaviors.tfaSmsResend = {
     attach: function (context, settings) {
       // Инициализация таймера при загрузке страницы
-      const $resendCode = $('.resend-code', context);
-      if ($resendCode.length > 0) {
-        const $resendText = $resendCode.find('.resend-text');
-        if ($resendText.length > 0) {
-          const timeMatch = $resendText.text().match(/\d+/);
+      const resendCode = context.querySelector('.resend-code');
+      if (resendCode) {
+        const resendText = resendCode.querySelector('.resend-text');
+        if (resendText) {
+          const timeMatch = resendText.textContent.match(/\d+/);
           if (timeMatch) {
             let timeLeft = parseInt(timeMatch[0], 10);
             if (timeLeft > 0) {
@@ -16,15 +16,15 @@
                 timeLeft--;
                 if (timeLeft <= 0) {
                   clearInterval(timer);
-                  $resendCode.removeClass('disabled');
-                  $resendCode.html('<a href="#" class="resend-link">' + Drupal.t('Resend code') + '</a>');
+                  resendCode.classList.remove('disabled');
+                  resendCode.innerHTML = `<a href="#" class="resend-link">${Drupal.t('Resend code')}</a>`;
                   
                   // Добавляем обработчик клика после истечения таймера
                   once('tfa-sms-resend', '.resend-link', context).forEach(function (element) {
                     element.addEventListener('click', handleResendClick);
                   });
                 } else {
-                  $resendText.text(Drupal.t('Resend code (@time_left s)', { '@time_left': timeLeft }));
+                  resendText.textContent = Drupal.t('Resend code (@time_left s)', { '@time_left': timeLeft });
                 }
               }, 1000);
             }
@@ -35,70 +35,75 @@
       // Обработчик клика по ссылке
       function handleResendClick(e) {
         e.preventDefault();
-        const $link = $(this);
-        $link.addClass('disabled').text(Drupal.t('Sending...'));
+        const link = this;
+        link.classList.add('disabled');
+        link.textContent = Drupal.t('Sending...');
         
         // Get the form
-        const $form = $link.closest('form');
-        if (!$form.length) {
+        const form = link.closest('form');
+        if (!form) {
           return;
         }
 
         // Get user ID from the form
-        const uid = $form.find('input[name="uid"]').val();
+        const uid = form.querySelector('input[name="uid"]').value;
         if (!uid) {
           return;
         }
 
         // Send AJAX request to resend code endpoint
-        $.ajax({
-          url: Drupal.url('tfa/sms/resend/' + uid),
-          type: 'POST',
-          dataType: 'json',
-          beforeSend: function() {
-            console.log('Sending AJAX request to:', Drupal.url('tfa/sms/resend/' + uid));
+        fetch(Drupal.url('tfa/sms/resend/' + uid), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          success: function(response) {
-            console.log('AJAX response:', response);
-            
-            // Reset the timer
-            let timeLeft = 30;
-            const $resendCode = $('.resend-code');
-            $resendCode.addClass('disabled');
-            $resendCode.html('<span class="resend-text">' + Drupal.t('Resend code (@time_left s)', { '@time_left': timeLeft }) + '</span>');
-            
-            // Start timer
-            const timer = setInterval(function() {
-              timeLeft--;
-              if (timeLeft <= 0) {
-                clearInterval(timer);
-                $resendCode.removeClass('disabled');
-                $resendCode.html('<a href="#" class="resend-link">' + Drupal.t('Resend code') + '</a>');
-                
-                // Reattach click handler
-                once('tfa-sms-resend', '.resend-link', context).forEach(function (element) {
-                  element.addEventListener('click', handleResendClick);
-                });
-              } else {
-                $resendCode.find('.resend-text').text(Drupal.t('Resend code (@time_left s)', { '@time_left': timeLeft }));
-              }
-            }, 1000);
-            
-            // Show success message
-            if (response.messages && response.messages.status) {
-              const message = response.messages.status[0].message;
-              const $messageWrapper = $('<div class="messages messages--status"><div class="messages__content">' + message + '</div></div>');
-              $form.before($messageWrapper);
-              setTimeout(() => $messageWrapper.fadeOut(), 5000);
+        })
+        .then(response => response.json())
+        .then(response => {
+          console.log('AJAX response:', response);
+          
+          // Reset the timer
+          let timeLeft = 30;
+          const resendCode = document.querySelector('.resend-code');
+          resendCode.classList.add('disabled');
+          resendCode.innerHTML = `<span class="resend-text">${Drupal.t('Resend code (@time_left s)', { '@time_left': timeLeft })}</span>`;
+          
+          // Start timer
+          const timer = setInterval(function() {
+            timeLeft--;
+            if (timeLeft <= 0) {
+              clearInterval(timer);
+              resendCode.classList.remove('disabled');
+              resendCode.innerHTML = `<a href="#" class="resend-link">${Drupal.t('Resend code')}</a>`;
+              
+              // Reattach click handler
+              once('tfa-sms-resend', '.resend-link', context).forEach(function (element) {
+                element.addEventListener('click', handleResendClick);
+              });
+            } else {
+              resendCode.querySelector('.resend-text').textContent = Drupal.t('Resend code (@time_left s)', { '@time_left': timeLeft });
             }
-          },
-          error: function(xhr, status, error) {
-            console.error('AJAX error:', {xhr: xhr, status: status, error: error});
-            $link.removeClass('disabled').text(Drupal.t('Resend code'));
-            const $messageWrapper = $('<div class="messages messages--error"><div class="messages__content">' + Drupal.t('Failed to send verification code. Please try again later.') + '</div></div>');
-            $form.before($messageWrapper);
-            setTimeout(() => $messageWrapper.fadeOut(), 5000);
+          }, 1000);
+          
+          // Show success message
+          if (response.messages && response.messages.status) {
+            const message = response.messages.status[0].message;
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'messages messages--status';
+            messageWrapper.innerHTML = `<div class="messages__content">${message}</div>`;
+            form.parentNode.insertBefore(messageWrapper, form);
+            setTimeout(() => messageWrapper.style.display = 'none', 5000);
           }
+        })
+        .catch(error => {
+          console.error('AJAX error:', error);
+          link.classList.remove('disabled');
+          link.textContent = Drupal.t('Resend code');
+          const messageWrapper = document.createElement('div');
+          messageWrapper.className = 'messages messages--error';
+          messageWrapper.innerHTML = `<div class="messages__content">${Drupal.t('Failed to send verification code. Please try again later.')}</div>`;
+          form.parentNode.insertBefore(messageWrapper, form);
+          setTimeout(() => messageWrapper.style.display = 'none', 5000);
         });
       }
 
@@ -108,4 +113,4 @@
       });
     }
   };
-})(jQuery, Drupal, once); 
+})(Drupal, once); 

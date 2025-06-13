@@ -6,6 +6,5 @@ tfa_sms:
   js:
     js/tfa_sms.js: {}
   dependencies:
-    - core/jquery
     - core/drupal
     - core/once 
